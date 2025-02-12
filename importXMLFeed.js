@@ -36,25 +36,63 @@ async function importXMLFeed() {
                 };
             });
         });
-        
+
         console.log("Načítané produkty z XML:", JSON.stringify(products, null, 2));
-        
+
         if (products.length === 0) {
             console.log("No products found in XML feed.");
             return;
         }
-        
+
         for (const product of products) {
-            console.log("Odosielanie produktov do Supabase:", JSON.stringify(product, null, 2));
-            const { error } = await supabase.from('products').upsert(product);
-            
-            if (error) {
-                console.error("Chyba pri zápise do Supabase:", error);
+            // Najprv skontrolujeme, či produkt existuje
+            const { data: existingProduct, error: selectError } = await supabase
+                .from('products')
+                .select('id, price, status')
+                .eq('name', product.name)
+                .eq('size', product.size)
+                .single();
+
+            if (selectError && selectError.code !== 'PGRST116') { // PGRST116 = No rows found
+                console.error("Chyba pri získavaní produktu:", selectError);
+                continue;
+            }
+
+            if (existingProduct) {
+                // Produkt existuje → aktualizujeme len cenu a status, ak sa zmenili
+                if (existingProduct.price !== product.price || existingProduct.status !== product.status) {
+                    console.log(`🔄 Aktualizujem produkt: ${product.name} (${product.size})`);
+                    const { error: updateError } = await supabase
+                        .from('products')
+                        .update({
+                            price: product.price,
+                            status: product.status
+                        })
+                        .eq('id', existingProduct.id);
+
+                    if (updateError) {
+                        console.error("Chyba pri aktualizácii produktu:", updateError);
+                    } else {
+                        console.log("✅ Produkt aktualizovaný:", product);
+                    }
+                } else {
+                    console.log(`✅ Produkt ${product.name} (${product.size}) je už aktuálny.`);
+                }
             } else {
-                console.log("Úspešne zapísaný produkt:", product);
+                // Produkt neexistuje → pridáme ho
+                console.log(`➕ Pridávam nový produkt: ${product.name} (${product.size})`);
+                const { error: insertError } = await supabase
+                    .from('products')
+                    .insert(product);
+
+                if (insertError) {
+                    console.error("Chyba pri vkladaní nového produktu:", insertError);
+                } else {
+                    console.log("✅ Nový produkt zapísaný:", product);
+                }
             }
         }
-        
+
         console.log("Feed bol importovaný do Supabase!");
     } catch (error) {
         console.error("Error importing XML feed:", error);
@@ -62,4 +100,5 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
 
