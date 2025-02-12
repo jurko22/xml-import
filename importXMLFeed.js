@@ -17,40 +17,29 @@ async function importXMLFeed() {
         const parsedData = await parseStringPromise(xmlContent);
         const items = parsedData.SHOP.SHOPITEM || [];
 
-        const products = items.flatMap((item) => {
-            const id = item.$.id ? parseInt(item.$.id, 10) : null; // Extrahovanie ID z SHOPITEM atribútu
-            const name = item.NAME?.[0] || "Unknown";
-            const imageUrl = item.IMGURL?.[0] || null; // Extrahovanie hlavného obrázka z SHOPITEM
-            
-            const variants = item.VARIANTS?.[0]?.VARIANT || [];
-            
-            if (variants.length === 0) {
-                // Ak produkt nemá varianty, vložíme ho ako samostatný produkt
-                return [{
-                    id,
-                    name,
-                    size: "Default", // Ak nemá varianty, dáme default
-                    price: parseFloat(item.PRICE_VAT?.[0] || 0),
-                    status: item.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy",
-                    image_url: imageUrl
-                }];
-            }
+const products = items.flatMap((item) => {
+    const id = item.$.id ? parseInt(item.$.id, 10) : null; 
+    const name = item.NAME?.[0] || "Unknown";
+    const imageUrl = item.IMAGES?.[0]?.IMAGE?.[0] || null; // Prvý obrázok
 
-            return variants.map((variant) => {
-                const size = variant.PARAMETERS?.[0]?.PARAMETER?.[0]?.VALUE?.[0] || "Unknown";
-                const price = parseFloat(variant.PRICE_VAT?.[0] || 0);
-                const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy";
+    const variants = item.VARIANTS?.[0]?.VARIANT || [];
+    
+    return variants.map((variant) => {
+        const size = variant.PARAMETERS?.[0]?.PARAMETER?.[0]?.VALUE?.[0] || "Unknown";
+        const price = parseFloat(variant.PRICE_VAT?.[0] || 0);
+        const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy";
 
-                return { 
-                    id,
-                    name, 
-                    size, 
-                    price, 
-                    status, 
-                    image_url: imageUrl // Obrázok z SHOPITEM použijeme pre všetky varianty
-                };
-            });
-        });
+        return { 
+            id,
+            name, 
+            size, 
+            price, 
+            status, 
+            image_url: imageUrl // Pridanie URL obrázka do objektu
+        };
+    });
+});
+
 
         console.log("Načítané produkty z XML:", JSON.stringify(products, null, 2));
 
