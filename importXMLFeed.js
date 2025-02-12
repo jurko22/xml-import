@@ -20,7 +20,7 @@ async function importXMLFeed() {
 const products = items.flatMap((item) => {
     const id = item.$.id ? parseInt(item.$.id, 10) : null; 
     const name = item.NAME?.[0] || "Unknown";
-    const imageUrl = item.IMAGES?.[0]?.IMAGE?.[0] || null; // Prvý obrázok
+    const imageUrl = item.IMAGES?.[0]?.IMAGE?.[0]?._ || null; // ✅ Extrahuje iba URL
 
     const variants = item.VARIANTS?.[0]?.VARIANT || [];
     
@@ -35,10 +35,11 @@ const products = items.flatMap((item) => {
             size, 
             price, 
             status, 
-            image_url: imageUrl // Pridanie URL obrázka do objektu
+            image_url: imageUrl // ✅ Už obsahuje iba string URL
         };
     });
 });
+
 
 
         console.log("Načítané produkty z XML:", JSON.stringify(products, null, 2));
