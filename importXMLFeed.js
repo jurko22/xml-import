@@ -18,6 +18,7 @@ async function importXMLFeed() {
         const items = parsedData.SHOP.SHOPITEM || [];
 
         const products = items.flatMap((item) => {
+            const id = item.ID?.[0] || null; // Extrahovanie ID produktu
             const name = item.NAME?.[0] || "Unknown";
             const imageUrl = item.IMGURL?.[0] || null; // Extrahovanie hlavného obrázka
             const variants = item.VARIANTS?.[0]?.VARIANT || [];
@@ -28,6 +29,7 @@ async function importXMLFeed() {
                 const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy";
 
                 return { 
+                    id,
                     name, 
                     size, 
                     price, 
@@ -49,7 +51,7 @@ async function importXMLFeed() {
             const { data: existingProduct, error: selectError } = await supabase
                 .from('products')
                 .select('id, price, status')
-                .eq('name', product.name)
+                .eq('id', product.id)
                 .eq('size', product.size)
                 .single();
 
@@ -100,5 +102,4 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
-
 
