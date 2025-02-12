@@ -1,7 +1,6 @@
 const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 const { parseStringPromise } = require('xml2js');
-const { v4: uuidv4 } = require('uuid');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -18,7 +17,6 @@ async function importXMLFeed() {
         const items = parsedData.SHOP.SHOPITEM || [];
 
         const products = items.flatMap((item) => {
-            const id = uuidv4();
             const name = item.NAME?.[0] || "Unknown";
             const variants = item.VARIANTS?.[0]?.VARIANT || [];
             
@@ -27,7 +25,7 @@ async function importXMLFeed() {
                 const price = parseFloat(variant.PRICE_VAT?.[0] || 0);
                 const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Unknown";
 
-                return { id, name, size, price, status };
+                return { name, size, price, status };
             });
         });
         
@@ -40,7 +38,7 @@ async function importXMLFeed() {
         
         for (const product of products) {
             console.log("Odosielanie produktov do Supabase:", JSON.stringify(product, null, 2));
-            const { error } = await supabase.from('products').upsert(product, { onConflict: ['id'] });
+            const { error } = await supabase.from('products').upsert(product);
             
             if (error) {
                 console.error("Chyba pri zápise do Supabase:", error);
@@ -56,3 +54,4 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
