@@ -116,7 +116,9 @@ async function importXMLFeed() {
 
         console.log("Feed bol importovaný do Supabase!");
     } catch (error) {
-       
+        console.error("Error importing XML feed:", error);
+    }
+}
 
-
+importXMLFeed();
 
