@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
-import fetch from 'node-fetch';
-import { parseStringPromise } from 'xml2js';
+const { createClient } = require('@supabase/supabase-js');
+const fetch = require('node-fetch');
+const { parseStringPromise } = require('xml2js');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 async function importXMLFeed() {
-    const xmlUrl = "https://ddzmuxcavpgbzhirzlqt.supabase.co/storage/v1/object/sign/xml/single_product.xml?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ4bWwvc2luZ2xlX3Byb2R1Y3QueG1sIiwiaWF0IjoxNzM5MzU3Mzk0LCJleHAiOjIwNTQ3MTczOTR9.TdY-QRhFMT09cx3i5x4QUOlkzfuJ7IzjCNjbjqFfLbc"; // URL k XML súboru v Supabase Storage
+    const xmlUrl = "https://ddzmuxcavpgbzhirzlqt.supabase.co/storage/v1/object/sign/xml/single_product.xml?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ4bWwvc2luZ2xlX3Byb2R1Y3QueG1sIiwiaWF0IjoxNzM5MzU3Mzk0LCJleHAiOjIwNTQ3MTczOTR9.TdY-QRhFMT09cx3i5x4QUOlkzfuJ7IzjCNjbjqFfLbc";
     try {
         const response = await fetch(xmlUrl);
         if (!response.ok) {
@@ -46,3 +46,4 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
