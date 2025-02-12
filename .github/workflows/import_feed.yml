@@ -16,12 +16,15 @@ jobs:
         with:
           node-version: 18
 
-      - name: Run import script indefinitely
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run import script every 30 seconds (3x)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          while true; do
+          for i in {1..3}; do
             node importXMLFeed.js
             sleep 30
           done
