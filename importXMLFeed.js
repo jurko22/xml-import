@@ -5,7 +5,7 @@ const { parseStringPromise } = require('xml2js');
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
 async function importXMLFeed() {
-    const xmlUrl = "https://ddzmuxcavpgbzhirzlqt.supabase.co/storage/v1/object/sign/xml/single_product.xml?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ4bWwvc2luZ2xlX3Byb2R1Y3QueG1sIiwiaWF0IjoxNzM5MzU3Mzk0LCJleHAiOjIwNTQ3MTczOTR9.TdY-QRhFMT09cx3i5x4QUOlkzfuJ7IzjCNjbjqFfLbc";
+    const xmlUrl = "https://raw.githubusercontent.com/jurko22/xml-feed/main/feed.xml";
     
     try {
         const response = await fetch(xmlUrl);
