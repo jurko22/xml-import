@@ -6,6 +6,7 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 async function importXMLFeed() {
     const xmlUrl = "https://ddzmuxcavpgbzhirzlqt.supabase.co/storage/v1/object/sign/xml/single_product.xml?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJ4bWwvc2luZ2xlX3Byb2R1Y3QueG1sIiwiaWF0IjoxNzM5MzU3Mzk0LCJleHAiOjIwNTQ3MTczOTR9.TdY-QRhFMT09cx3i5x4QUOlkzfuJ7IzjCNjbjqFfLbc";
+    
     try {
         const response = await fetch(xmlUrl);
         if (!response.ok) {
@@ -18,6 +19,7 @@ async function importXMLFeed() {
 
         const products = items.flatMap((item) => {
             const name = item.NAME?.[0] || "Unknown";
+            const imageUrl = item.IMGURL?.[0] || null; // Extrahovanie hlavného obrázka
             const variants = item.VARIANTS?.[0]?.VARIANT || [];
             
             return variants.map((variant) => {
@@ -29,7 +31,8 @@ async function importXMLFeed() {
                     name, 
                     size, 
                     price, 
-                    status 
+                    status, 
+                    image_url: imageUrl // Pridanie URL obrázka do objektu
                 };
             });
         });
@@ -59,3 +62,4 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
