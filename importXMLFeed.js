@@ -27,6 +27,8 @@ async function importXMLFeed() {
                 const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Unknown";
 
                 return { id, name, size, price, status };
+                console.log("Načítané produkty z XML:", JSON.stringify(products, null, 2));
+
             });
         });
         
