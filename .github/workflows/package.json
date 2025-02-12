@@ -1,0 +1,14 @@
+{
+  "name": "xml-import",
+  "version": "1.0.0",
+  "description": "Import XML feed to Supabase",
+  "main": "importXMLFeed.js",
+  "scripts": {
+    "start": "node importXMLFeed.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.7",
+    "xml2js": "^0.5.0",
+    "@supabase/supabase-js": "^2.0.0"
+  }
+}
