@@ -18,7 +18,7 @@ async function importXMLFeed() {
         const items = parsedData.SHOP.SHOPITEM || [];
 
         const products = items.flatMap((item) => {
-            const id = item.ID?.[0] || null; // Extrahovanie ID produktu
+            const id = item.$.id ? parseInt(item.$.id, 10) : null; // Extrahovanie ID z SHOPITEM atributu
             const name = item.NAME?.[0] || "Unknown";
             const imageUrl = item.IMGURL?.[0] || null; // Extrahovanie hlavného obrázka
             const variants = item.VARIANTS?.[0]?.VARIANT || [];
@@ -47,6 +47,11 @@ async function importXMLFeed() {
         }
 
         for (const product of products) {
+            if (product.id === null) {
+                console.warn(`⚠️ Preskakujem produkt bez platného ID: ${product.name} (${product.size})`);
+                continue;
+            }
+
             // Najprv skontrolujeme, či produkt existuje
             const { data: existingProduct, error: selectError } = await supabase
                 .from('products')
@@ -70,7 +75,8 @@ async function importXMLFeed() {
                             price: product.price,
                             status: product.status
                         })
-                        .eq('id', existingProduct.id);
+                        .eq('id', existingProduct.id)
+                        .eq('size', product.size);
 
                     if (updateError) {
                         console.error("Chyba pri aktualizácii produktu:", updateError);
@@ -102,4 +108,5 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
 
