@@ -23,9 +23,14 @@ async function importXMLFeed() {
             return variants.map((variant) => {
                 const size = variant.PARAMETERS?.[0]?.PARAMETER?.[0]?.VALUE?.[0] || "Unknown";
                 const price = parseFloat(variant.PRICE_VAT?.[0] || 0);
-                const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Unknown";
+                const status = variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy";
 
-                return { name, size, price, status };
+                return { 
+                    name, 
+                    size, 
+                    price, 
+                    status 
+                };
             });
         });
         
@@ -54,4 +59,3 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
-
