@@ -1,8 +1,9 @@
 name: Import XML Feed to Supabase
+
 on:
+  workflow_dispatch: # Možnosť manuálneho spustenia
   schedule:
     - cron: "0 * * * *" # ✅ Spustí sa každú hodinu
-  workflow_dispatch: # Možnosť spustiť manuálne
 
 jobs:
   import_feed:
@@ -19,17 +20,28 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🚀 Run import script every 30s (3x)
+      - name: 🚀 Run import script every 30s for 60 minutes
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          echo "Starting XML import loop..."
-          for i in {1..3}; do
-            echo "🔄 Running import attempt $i"
+          echo "🚀 Starting continuous import loop..."
+          end=$((SECONDS+3600))  # ✅ Beží 3600 sekúnd (1 hodina)
+          while [ $SECONDS -lt $end ]; do
+            echo "🔄 Running import at $(date)"
             node importXMLFeed.js 2>&1 | tee -a import_log.txt
-            sleep 30
+            sleep 30  # ✅ Import každých 30 sekúnd
           done
+          echo "✅ Completed 1-hour import cycle."
+
+      - name: 🔄 Trigger next run immediately
+        if: always()
+        run: |
+          echo "🔁 Triggering next run..."
+          curl -X POST -H "Authorization: token ${{ secrets.PAT_TOKEN }}" \
+               -H "Accept: application/vnd.github.v3+json" \
+               https://api.github.com/repos/${{ github.repository }}/actions/workflows/import_feed.yml/dispatches \
+               -d '{"ref":"main"}'
 
       - name: 📜 Upload log on failure
         if: failure()
