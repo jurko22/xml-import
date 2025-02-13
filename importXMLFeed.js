@@ -75,6 +75,7 @@ async function importXMLFeed() {
             return;
         }
 
+        // Mapa existujúcich veľkostí
         const sizeMap = new Map();
         for (const size of existingSizes) {
             const key = `${size.product_id}-${size.size}`;
@@ -90,13 +91,22 @@ async function importXMLFeed() {
                 const existingSize = sizeMap.get(key);
 
                 if (existingSize) {
-                    if (existingSize.price !== variant.price || existingSize.status !== variant.status) {
+                    // Správna kontrola zmien ceny a statusu
+                    const priceChanged = existingSize.price !== variant.price;
+                    const statusChanged = existingSize.status !== variant.status;
+
+                    if (priceChanged || statusChanged) {
                         sizesToUpdate.push({
                             product_id: product.id,
                             size: variant.size,
                             price: variant.price,
                             status: variant.status
                         });
+                        console.log(
+                            `🔄 Updating size ${variant.size} for ${product.name}: ` +
+                            `${priceChanged ? `Price ${existingSize.price} → ${variant.price}` : ""} ` +
+                            `${statusChanged ? `Status ${existingSize.status} → ${variant.status}` : ""}`
+                        );
                     }
                 } else {
                     sizesToInsert.push({
@@ -135,5 +145,3 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
-
-
