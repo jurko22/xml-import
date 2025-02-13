@@ -1,7 +1,7 @@
 name: Import XML Feed to Supabase
 on:
   schedule:
-    - cron: "*/1 * * * *" # Spustí sa každú minútu
+    - cron: "0 * * * *" # ✅ Spustí sa každú hodinu
   workflow_dispatch: # Možnosť spustiť manuálne
 
 jobs:
@@ -9,27 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: 🛒 Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: ⚙️ Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🚀 Run import script
+      - name: 🚀 Run import script every 30s (3x)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
         run: |
-          echo "Starting XML import..."
-          node importXMLFeed.js 2>&1 | tee import_log.txt
+          echo "Starting XML import loop..."
+          for i in {1..3}; do
+            echo "🔄 Running import attempt $i"
+            node importXMLFeed.js 2>&1 | tee -a import_log.txt
+            sleep 30
+          done
 
       - name: 📜 Upload log on failure
         if: failure()
-        uses: actions/upload-artifact@v4 # ✅ AKTUALIZOVANÁ VERZIA
+        uses: actions/upload-artifact@v4
         with:
           name: import-log
           path: import_log.txt
