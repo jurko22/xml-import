@@ -1,9 +1,13 @@
 const Imap = require('imap');
 const { simpleParser } = require('mailparser');
-const axios = require('axios');
+const { createClient } = require('@supabase/supabase-js');
 
 require('dotenv').config();
 
+// Supabase klient
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
+
+// Gmail IMAP pripojenie
 const imap = new Imap({
   user: process.env.GMAIL_USER,
   password: process.env.GMAIL_PASS,
@@ -28,6 +32,7 @@ imap.once('ready', function () {
           simpleParser(stream, async (err, parsed) => {
             if (err) throw err;
 
+            // Extrahovanie údajov z e-mailu
             const emailData = {
               subject: parsed.subject || 'Neznámy predmet',
               from: parsed.from.text || 'Neznámy odosielateľ',
@@ -37,12 +42,19 @@ imap.once('ready', function () {
 
             console.log("📥 Prijatý email:", emailData);
 
-            // ✅ Handler na spracovanie e-mailu
+            // ✅ Handler na spracovanie objednávky
             const parsedOrder = processOrderEmail(emailData);
 
             if (parsedOrder) {
-              console.log("✅ Platná objednávka, posielam na webhook:", parsedOrder);
-              await axios.post('https://airkicks.eu/webhook', parsedOrder);
+              console.log("✅ Platná objednávka, ukladám do Supabase:", parsedOrder);
+              
+              const { data, error } = await supabase.from('orders').insert([parsedOrder]);
+              
+              if (error) {
+                console.error("❌ Chyba pri ukladaní do Supabase:", error);
+              } else {
+                console.log("✅ Objednávka uložená do Supabase:", data);
+              }
             } else {
               console.log("❌ E-mail nie je objednávka, ignorujem.");
             }
@@ -73,7 +85,7 @@ function processOrderEmail(emailData) {
     return null; // ❌ Ak e-mail nie je objednávka, ignorujeme ho
   }
 
-  // 📦 Pokus o extrakciu údajov
+  // 📦 Extrahovanie údajov
   const orderIdMatch = emailData.text.match(/Kód objednávky:\s?(\d+)/);
   const productMatch = emailData.text.match(/(Sneaker Shields)/);
   const sizeMatch = emailData.text.match(/Veľkosť tenisky:\s?([\d-]+)/);
@@ -89,6 +101,8 @@ function processOrderEmail(emailData) {
     size: sizeMatch[1].trim(),
     price: parseFloat(priceMatch[1].replace(',', '.').trim()),
     email_subject: emailData.subject,
-    email_from: emailData.from
+    email_from: emailData.from,
+    created_at: new Date().toISOString()  // Timestamp pre Supabase
   };
 }
+
