@@ -1,12 +1,12 @@
 name: Import XML Feed & Gmail Webhook to Supabase
 
 on:
-  workflow_dispatch: # Možnosť manuálneho spustenia
+  workflow_dispatch:
   schedule:
-    - cron: "0 * * * *" # ✅ Spustí sa každú hodinu
+    - cron: "0 * * * *"  # ✅ Spustí sa každú hodinu
 
 jobs:
-  import_feed_and_gmail:
+  import_feed:
     runs-on: ubuntu-latest
     steps:
       - name: 🛒 Checkout repo
@@ -20,23 +20,22 @@ jobs:
       - name: 📦 Install dependencies
         run: npm install
 
-      - name: 🚀 Run import script & Gmail webhook every 30s for 60 minutes
+      - name: 🚀 Run import scripts in a loop for 1 hour
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
         run: |
-          echo "🚀 Starting continuous import & Gmail webhook loop..."
+          echo "🚀 Starting continuous import loop..."
           end=$((SECONDS+3600))  # ✅ Beží 3600 sekúnd (1 hodina)
           while [ $SECONDS -lt $end ]; do
-            echo "🔄 Running import XML feed at $(date)"
+            echo "🔄 Running import at $(date)"
             node importXMLFeed.js 2>&1 | tee -a import_log.txt
-            echo "📩 Checking Gmail IMAP for new emails at $(date)"
-            node gmail-webhook.js 2>&1 | tee -a gmail_log.txt
-            sleep 30  # ✅ Každých 30 sekúnd
+            node gmail-webhook.js 2>&1 | tee -a import_log.txt
+            sleep 20  # ✅ Import každých 20 sekúnd
           done
-          echo "✅ Completed 1-hour import & Gmail webhook cycle."
+          echo "✅ Completed 1-hour import cycle."
 
       - name: 🔄 Trigger next run immediately
         if: always()
@@ -47,12 +46,10 @@ jobs:
                https://api.github.com/repos/${{ github.repository }}/actions/workflows/import_feed.yml/dispatches \
                -d '{"ref":"main"}'
 
-      - name: 📜 Upload logs on failure
+      - name: 📜 Upload log on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: import-and-gmail-logs
-          path: |
-            import_log.txt
-            gmail_log.txt
+          name: import-log
+          path: import_log.txt
 
