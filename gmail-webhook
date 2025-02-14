@@ -105,4 +105,3 @@ function processOrderEmail(emailData) {
     created_at: new Date().toISOString()  // Timestamp pre Supabase
   };
 }
-
