@@ -1,7 +1,6 @@
 const Imap = require('imap');
 const { simpleParser } = require('mailparser');
 const { createClient } = require('@supabase/supabase-js');
-
 require('dotenv').config();
 
 // Zabezpečenie - ignorovanie SSL/TLS problémov
@@ -12,8 +11,8 @@ const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY
 
 // Gmail IMAP pripojenie
 const imap = new Imap({
-  user: process.env.GMAIL_USER,
-  password: process.env.GMAIL_PASS,
+  user: process.env.GMAIL_USER, // Your Gmail email address
+  password: process.env.GMAIL_APP_PASSWORD, // App Password here, NOT your regular Gmail password
   host: 'imap.gmail.com',
   port: 993,
   tls: true
@@ -95,17 +94,6 @@ function processOrderEmail(emailData) {
   const priceMatch = emailData.text.match(/Cena za m.1:\s?([\d,]+) €/);
 
   if (!orderIdMatch || !productMatch || !sizeMatch || !priceMatch) {
-    return null; // ❌ Ak sa nepodarilo extrahovať údaje, ignorujeme e-mail
-  }
+    return null; // ❌ Ak sa nepodarilo extrahovať úd
 
-  return {
-    order_id: orderIdMatch[1].trim(),
-    product_name: productMatch[1].trim(),
-    size: sizeMatch[1].trim(),
-    price: parseFloat(priceMatch[1].replace(',', '.').trim()),
-    email_subject: emailData.subject,
-    email_from: emailData.from,
-    created_at: new Date().toISOString()  // Timestamp pre Supabase
-  };
-}
 
