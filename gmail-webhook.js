@@ -94,6 +94,17 @@ function processOrderEmail(emailData) {
   const priceMatch = emailData.text.match(/Cena za m.1:\s?([\d,]+) €/);
 
   if (!orderIdMatch || !productMatch || !sizeMatch || !priceMatch) {
-    return null; // ❌ Ak sa nepodarilo extrahovať úd
+    return null; // ❌ Ak sa nepodarilo extrahovať údaje, ignorujeme e-mail
+  }
 
+  return {
+    order_id: orderIdMatch[1].trim(),
+    product_name: productMatch[1].trim(),
+    size: sizeMatch[1].trim(),
+    price: parseFloat(priceMatch[1].replace(',', '.').trim()),
+    email_subject: emailData.subject,
+    email_from: emailData.from,
+    created_at: new Date().toISOString()  // Timestamp pre Supabase
+  };
+}
 
