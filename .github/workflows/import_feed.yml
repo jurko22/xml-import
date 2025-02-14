@@ -54,7 +54,3 @@ jobs:
         with:
           name: import-log
           path: import_log.txt
-
-          name: import-log
-          path: import_log.txt
-
