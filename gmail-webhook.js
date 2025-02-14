@@ -4,6 +4,9 @@ const { createClient } = require('@supabase/supabase-js');
 
 require('dotenv').config();
 
+// Zabezpečenie - ignorovanie SSL/TLS problémov
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Toto umožní pripojenie k serverom so self-signed certifikátmi
+
 // Supabase klient
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 
@@ -105,3 +108,4 @@ function processOrderEmail(emailData) {
     created_at: new Date().toISOString()  // Timestamp pre Supabase
   };
 }
+
