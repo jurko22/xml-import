@@ -2,9 +2,11 @@ const { createClient } = require('@supabase/supabase-js');
 const fetch = require('node-fetch');
 const { parseStringPromise, Builder } = require('xml2js');
 const fs = require('fs');
+const { execSync } = require('child_process');
 
 const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_KEY);
 const xmlUrl = "https://raw.githubusercontent.com/jurko22/xml-feed/main/feed.xml";
+const xmlFilePath = './feed.xml';
 
 async function importXMLFeed() {
     try {
@@ -41,12 +43,6 @@ async function importXMLFeed() {
         }
 
         const priceMap = new Map(productPrices.map(p => [`${p.product_id}-${p.size}`, { price: p.final_price, status: p.final_status }]));
-
-        // 🛠 Odstránenie starého XML feedu, aby sa vždy generoval nový
-        const xmlFilePath = './updated_feed.xml';
-        if (fs.existsSync(xmlFilePath)) {
-            fs.unlinkSync(xmlFilePath);
-        }
 
         console.log("🛠 Updating XML feed...");
         const updatedItems = products.map(product => {
@@ -86,6 +82,15 @@ async function importXMLFeed() {
         fs.writeFileSync(xmlFilePath, updatedXml);
         console.log("✅ XML Feed updated!");
 
+        // 🛠 Commit a push XML na GitHub
+        console.log("🚀 Committing and pushing XML feed to GitHub...");
+        execSync("git config --global user.name 'GitHub Actions'");
+        execSync("git config --global user.email 'actions@github.com'");
+        execSync("git add feed.xml");
+        execSync('git commit -m "🔄 Auto-update XML feed" || echo "No changes to commit"');
+        execSync("git push origin main");
+
+        console.log("✅ XML feed successfully pushed to GitHub!");
     } catch (error) {
         console.error("❌ Error importing XML feed:", error);
     }
