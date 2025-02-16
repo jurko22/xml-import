@@ -1,4 +1,4 @@
-name: Import XML Feed & Gmail Webhook to Supabase
+name: Import XML Feed to Supabase
 
 on:
   workflow_dispatch:
@@ -22,19 +22,16 @@ jobs:
           npm install dotenv
           npm install
 
-      - name: 🚀 Run import scripts in a loop for 1 hour
+      - name: 🚀 Run product import script in a loop for 1 hour
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          GMAIL_USER: ${{ secrets.GMAIL_USER }}
-          GMAIL_PASS: ${{ secrets.GMAIL_PASS }}
         run: |
           echo "🚀 Starting continuous import loop..."
           end=$((SECONDS+3600)) 
           while [ $SECONDS -lt $end ]; do
-            echo "🔄 Running import at $(date)"
+            echo "🔄 Running product import at $(date)"
             node importXMLFeed.js 2>&1 | tee -a import_log.txt
-            node gmail-webhook.js 2>&1 | tee -a import_log.txt
             sleep 20  
           done
           echo "✅ Completed 1-hour import cycle."
@@ -54,3 +51,4 @@ jobs:
         with:
           name: import-log
           path: import_log.txt
+
