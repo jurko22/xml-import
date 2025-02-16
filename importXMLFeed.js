@@ -42,20 +42,27 @@ async function importXMLFeed() {
 
         const priceMap = new Map(productPrices.map(p => [`${p.product_id}-${p.size}`, { price: p.final_price, status: p.final_status }]));
 
-        // Generovanie aktualizovaného XML feedu
+        // 🛠 Odstránenie starého XML feedu, aby sa vždy generoval nový
+        const xmlFilePath = './updated_feed.xml';
+        if (fs.existsSync(xmlFilePath)) {
+            fs.unlinkSync(xmlFilePath);
+        }
+
         console.log("🛠 Updating XML feed...");
         const updatedItems = products.map(product => {
-            let hasExpresne = false; 
+            let hasExpresne = false;
 
             const variants = product.sizes.map(variant => {
                 const key = `${product.id}-${variant.size}`;
                 const priceData = priceMap.get(key) || { price: 0, status: "Neznámy" };
-                
+
+                console.log(`🛠 ${product.id} - ${variant.size} → Cena: ${priceData.price}, Status: ${priceData.status}`);
+
                 if (priceData.status === "SKLADOM EXPRES") hasExpresne = true;
 
                 return {
                     PARAMETERS: [{ PARAMETER: [{ VALUE: [variant.size] }] }],
-                    PRICE_VAT: [priceData.price.toString()],
+                    PRICE_VAT: [(priceData.price ?? 0).toString()], // Ak je null, nastaví sa 0
                     AVAILABILITY_OUT_OF_STOCK: [priceData.status]
                 };
             });
@@ -76,7 +83,6 @@ async function importXMLFeed() {
         const builder = new Builder();
         const updatedXml = builder.buildObject({ SHOP: { SHOPITEM: updatedItems } });
 
-        const xmlFilePath = './updated_feed.xml';
         fs.writeFileSync(xmlFilePath, updatedXml);
         console.log("✅ XML Feed updated!");
 
@@ -86,3 +92,4 @@ async function importXMLFeed() {
 }
 
 importXMLFeed();
+
