@@ -21,9 +21,7 @@ async function importXMLFeed() {
             name: item.NAME?.[0] || "Unknown",
             image_url: item.IMAGES?.[0]?.IMAGE?.[0]?._ || null,
             sizes: (item.VARIANTS?.[0]?.VARIANT || []).map(variant => ({
-                size: variant.PARAMETERS?.[0]?.PARAMETER?.[0]?.VALUE?.[0] || "Unknown",
-                price: parseFloat(variant.PRICE_VAT?.[0] || 0),
-                status: variant.AVAILABILITY_OUT_OF_STOCK?.[0] || "Neznámy"
+                size: variant.PARAMETERS?.[0]?.PARAMETER?.[0]?.VALUE?.[0] || "Unknown"
             }))
         }));
 
@@ -32,72 +30,17 @@ async function importXMLFeed() {
             return;
         }
 
-        console.log("📡 Fetching existing product sizes from Supabase...");
-        const { data: existingSizes, error: sizeFetchError } = await supabase
-            .from('product_sizes')
-            .select('product_id, size, original_price');
+        console.log("📡 Fetching updated product prices and statuses from Supabase...");
+        const { data: productPrices, error: priceFetchError } = await supabase
+            .from('product_price_view')
+            .select('product_id, size, final_price, final_status');
 
-        if (sizeFetchError) {
-            console.error("❌ Error fetching sizes:", sizeFetchError);
+        if (priceFetchError) {
+            console.error("❌ Error fetching product prices:", priceFetchError);
             return;
         }
 
-        const sizeMap = new Map(existingSizes.map(s => [`${s.product_id}-${s.size}`, s.original_price]));
-
-        let sizesToInsert = [];
-        let sizesToUpdate = [];
-
-        for (const product of products) {
-            for (const variant of product.sizes) {
-                const key = `${product.id}-${variant.size}`;
-                const existingOriginalPrice = sizeMap.get(key);
-
-                if (existingOriginalPrice === undefined) {
-                    // Prvý import, uložíme pôvodnú cenu
-                    sizesToInsert.push({
-                        product_id: product.id,
-                        size: variant.size,
-                        price: variant.price,
-                        status: variant.status,
-                        original_price: variant.price
-                    });
-                } else {
-                    // Cena sa mení, ale original_price zostáva rovnaká
-                    sizesToUpdate.push({
-                        product_id: product.id,
-                        size: variant.size,
-                        price: variant.price,
-                        status: variant.status
-                    });
-                }
-            }
-        }
-
-        if (sizesToInsert.length > 0) {
-            console.log(`➕ Inserting ${sizesToInsert.length} new size records...`);
-            await supabase.from('product_sizes').insert(sizesToInsert);
-        }
-
-        if (sizesToUpdate.length > 0) {
-            console.log(`🔄 Updating ${sizesToUpdate.length} size records...`);
-            for (const size of sizesToUpdate) {
-                await supabase
-                    .from('product_sizes')
-                    .update({ price: size.price, status: size.status })
-                    .eq('product_id', size.product_id)
-                    .eq('size', size.size);
-            }
-        }
-
-        console.log("📡 Fetching user products for price overrides...");
-        const { data: userProducts, error: userProductsError } = await supabase
-            .from('user_products')
-            .select('product_id, size, price');
-
-        if (userProductsError) {
-            console.error("❌ Error fetching user products:", userProductsError);
-            return;
-        }
+        const priceMap = new Map(productPrices.map(p => [`${p.product_id}-${p.size}`, { price: p.final_price, status: p.final_status }]));
 
         // Generovanie aktualizovaného XML feedu
         console.log("🛠 Updating XML feed...");
@@ -106,17 +49,14 @@ async function importXMLFeed() {
 
             const variants = product.sizes.map(variant => {
                 const key = `${product.id}-${variant.size}`;
-                const userPrice = userProducts.find(up => up.product_id === product.id && up.size === variant.size)?.price;
-                const originalPrice = sizeMap.get(key) || variant.price;
-                const newPrice = userPrice !== undefined ? userPrice : originalPrice;
-                const newStatus = userPrice !== undefined ? "SKLADOM EXPRES" : "SKLADOM";
-
-                if (newStatus === "SKLADOM EXPRES") hasExpresne = true;
+                const priceData = priceMap.get(key) || { price: 0, status: "Neznámy" };
+                
+                if (priceData.status === "SKLADOM EXPRES") hasExpresne = true;
 
                 return {
                     PARAMETERS: [{ PARAMETER: [{ VALUE: [variant.size] }] }],
-                    PRICE_VAT: [newPrice.toString()],
-                    AVAILABILITY_OUT_OF_STOCK: [newStatus]
+                    PRICE_VAT: [priceData.price.toString()],
+                    AVAILABILITY_OUT_OF_STOCK: [priceData.status]
                 };
             });
 
